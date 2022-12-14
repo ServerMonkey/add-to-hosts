@@ -1,0 +1,67 @@
+#!/bin/sh
+
+# parse arguments
+# verify input is IP, FQDN or hostname
+if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    man add-to-hosts.1 || ronn -r <README.md | man -l -
+    exit
+else
+    HOST="$1"
+    case "$HOST" in
+    '' | *[' !&()'@#$%^*+]*)
+        echo "First input is not a valid hostname, IP or FQDN" >&2
+        exit 1
+        ;;
+    esac
+fi
+
+# verify input is IP, FQDN or hostname
+IP="$2"
+case "$IP" in
+'' | *[' !&()'@#$%^*+]*)
+    echo "Second input is not a valid hostname, IP or FQDN" >&2
+    exit 1
+    ;;
+esac
+
+# must run as root
+if [ "$(id -u)" -ne 0 ]; then
+    echo 'This script must be run as root!' >&2
+    exit 1
+fi
+
+DATA="$IP $HOST"
+FILE_HOSTS="/etc/hosts"
+CURRENT_HOSTS=$(sed '/^#/d' <"$FILE_HOSTS" | sed '/^$/d' | awk '{print $2}')
+
+# remove existing
+if [ "$IP" = "--rm" ]; then
+    if echo "$CURRENT_HOSTS" | grep -qx "$HOST"; then
+        echo "Removing $HOST from $FILE_HOSTS"
+        sed -i "/^.* $HOST\b/d" "$FILE_HOSTS"
+    else
+        echo "$HOST already removed from $FILE_HOSTS"
+    fi
+
+# skip existing exact matches
+elif grep -qx "^$DATA" <"$FILE_HOSTS"; then
+    echo "$HOST already exists in $FILE_HOSTS"
+
+# replace existing
+elif echo "$CURRENT_HOSTS" | grep -qx "$HOST"; then
+    echo "Replacing $HOST in $FILE_HOSTS"
+    sed -i "s/^.* $HOST\b/$DATA/g" "$FILE_HOSTS"
+
+# append
+else
+    # add linefeed if there is none
+    if [ -s "$FILE_HOSTS" ] && [ -z "$(tail -c 1 "$FILE_HOSTS")" ]; then
+        :
+    else
+        echo "Appending linefeed to $FILE_HOSTS"
+        echo "" >>"$FILE_HOSTS"
+    fi
+    # add data
+    echo "Appending $HOST to $FILE_HOSTS"
+    echo "$DATA" >>"$FILE_HOSTS"
+fi
