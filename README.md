@@ -8,7 +8,7 @@ add-to-hosts(1) -- Add or remove a host in /etc/hosts
 ## DESCRIPTION
 
 Easier manage the /etc/hosts file.  
-Does not allow aliases. But you can add Aliases manually.  
+Does not allow aliases. But you can add them manually.  
 If the host already exists in /etc/hosts, the current target hostname/IP/FQDN
 will be overwritten.
 
@@ -41,4 +41,3 @@ See license file
 ## SEE ALSO
 
 hosts(5)
-# add-to-hosts
